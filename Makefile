@@ -196,6 +196,18 @@ else ifeq ($(platform), psl1ght)
 	PLATFORM_DEFINES := -D__CELLOS_LV2__ -DMSB_FIRST
 	STATIC_LINKING = 1
 
+# PS2
+else ifeq ($(platform), ps2)
+	TARGET := $(TARGET_NAME)_libretro_$(platform).a
+	CC = ee-gcc$(EXE_EXT)
+	CXX = ee-g++$(EXE_EXT)
+	AR = ee-ar$(EXE_EXT)
+	PLATFORM_DEFINES := -DPS2 -G0 -DNO_UNALIGNED_ACCESS -DABGR1555 -DRENDER_GSKIT_PS2 -fsingle-precision-constant
+	PLATFORM_DEFINES += -Ips2 -I$(PS2SDK)/ee/include -I$(PS2SDK)/common/include  -I$(PS2DEV)/gsKit/include
+	PLATFORM_DEFINES += -O3
+	CXXFLAGS += -fno-rtti -fno-exceptions -ffast-math
+	STATIC_LINKING = 1
+
 # PSP
 else ifeq ($(platform), psp1)
 	TARGET := $(TARGET_NAME)_libretro_$(platform).a
@@ -475,6 +487,26 @@ TARGET := $(TARGET_NAME)_libretro.dll
 PSS_STYLE :=2
 LDFLAGS += -DLL
 
+# Windows MSVC 2008 x86
+else ifeq ($(platform), windows_msvc2008_x86)
+	CC  = cl.exe
+	CXX = cl.exe
+
+PATH := $(shell IFS=$$'\n'; cygpath "$(VS90COMNTOOLS)../../VC/bin"):$(PATH)
+PATH := $(PATH):$(shell IFS=$$'\n'; cygpath "$(VS90COMNTOOLS)../IDE")
+INCLUDE := $(shell IFS=$$'\n'; cygpath "$(VS90COMNTOOLS)../../VC/include")
+LIB := $(shell IFS=$$'\n'; cygpath -w "$(VS90COMNTOOLS)../../VC/lib")
+BIN := $(shell IFS=$$'\n'; cygpath "$(VS90COMNTOOLS)../../VC/bin")
+
+WindowsSdkDir := $(INETSDK)
+
+export INCLUDE := $(INCLUDE);$(INETSDK)/Include;libretro/libretro-common/include/compat/msvc
+export LIB := $(LIB);$(WindowsSdkDir);$(INETSDK)/Lib
+TARGET := $(TARGET_NAME)_libretro.dll
+PSS_STYLE :=2
+LDFLAGS += -DLL
+CFLAGS += -D_CRT_SECURE_NO_DEPRECATE
+
 # Windows MSVC 2005 x86
 else ifeq ($(platform), windows_msvc2005_x86)
 	CC  = cl.exe
@@ -610,7 +642,6 @@ ifeq ($(STATIC_LINKING), 1)
 else
 	$(LD) $(LINKOUT)$@ $(SHARED) $(OBJECTS) $(LDFLAGS) $(LIBS)
 endif
-	@echo "** BUILD SUCCESSFUL! GG NO RE **"
 	
 %.o: %.cpp
 	$(CXX) -c $(OBJOUT)$@ $< $(CXXFLAGS) $(INCFLAGS)
